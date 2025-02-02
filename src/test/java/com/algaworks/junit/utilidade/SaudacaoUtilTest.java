@@ -14,6 +14,8 @@ class SaudacaoUtilTest {
 
     @Test
     public void deveLancarException() {
+        int horaInvalida = -10;
+
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> {
             SaudacaoUtil.saudar(-10);
         });
