@@ -1,6 +1,7 @@
 package com.algaworks.junit.blog.negocio;
 
 import com.algaworks.junit.blog.armazenamento.ArmazenamentoEditor;
+import com.algaworks.junit.blog.exception.EditorNaoEncontradoException;
 import com.algaworks.junit.blog.exception.RegraNegocioException;
 import com.algaworks.junit.blog.modelo.Editor;
 import org.junit.jupiter.api.*;
@@ -17,9 +18,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class CadastroEditorComMockTest {
 
-    @Spy
-    Editor editor = new Editor(null, "Alex", "alex@email.com", BigDecimal.TEN, true);;
-
     @Captor
     ArgumentCaptor<Mensagem> mensagemArgumentCaptor;
 
@@ -34,6 +32,10 @@ public class CadastroEditorComMockTest {
 
     @Nested
     class CadastroComEditorValido {
+
+        @Spy
+        Editor editor = new Editor(null, "Alex", "alex@email.com", BigDecimal.TEN, true);
+
         @BeforeEach
         void init() {
             Mockito.when(armazenamentoEditor.salvar(Mockito.any(Editor.class)))
@@ -115,6 +117,37 @@ public class CadastroEditorComMockTest {
             Mockito.verify(gerenciadorEnvioEmail, Mockito.never()).enviarEmail(Mockito.any());
         }
 
+    }
+
+    @Nested
+    class EdicaoComEditorValido {
+        @Spy
+        Editor editor = new Editor(1L, "Alex", "alex@email.com", BigDecimal.TEN, true);
+
+        @BeforeEach
+        void init() {
+            Mockito.when(armazenamentoEditor.salvar(editor)).thenAnswer(invocacao -> invocacao.getArgument(0,
+                    Editor.class));
+            Mockito.when(armazenamentoEditor.encontrarPorId(1L)).thenReturn(Optional.of(editor));
+        }
+
+        @Test
+        void dado_um_editor_valido_Quando_editar_Entao_deve_alterar_editor_salvo() {
+            Editor editorAtualizado = new Editor(1L, "Alex Silva", "alex.silva@email.com",
+                    BigDecimal.ZERO, false);
+            cadastroEditor.editar(editorAtualizado);
+            Mockito.verify(editor, Mockito.times(1)).atualizarComDados(editorAtualizado);
+
+            InOrder inOrder = Mockito.inOrder(editor, armazenamentoEditor);
+            inOrder.verify(editor).atualizarComDados(editorAtualizado);
+            inOrder.verify(armazenamentoEditor).salvar(editor);
+        }
+
+        @Test
+        void Dado_um_editor_que_nao_exista_Quando_editar_Entao_deve_lancar_exception() {
+            assertThrows(EditorNaoEncontradoException.class, () -> cadastroEditor.editar(editor));
+            Mockito.verify(armazenamentoEditor, Mockito.never()).salvar(Mockito.any());
+        }
     }
 
 }
