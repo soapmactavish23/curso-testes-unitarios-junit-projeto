@@ -34,7 +34,7 @@ public class CadastroEditorComMockTest {
     class CadastroComEditorValido {
 
         @Spy
-        Editor editor = new Editor(null, "Alex", "alex@email.com", BigDecimal.TEN, true);
+        Editor editor = EditorTestData.umEditorNovo();
 
         @BeforeEach
         void init() {
@@ -122,7 +122,7 @@ public class CadastroEditorComMockTest {
     @Nested
     class EdicaoComEditorValido {
         @Spy
-        Editor editor = new Editor(1L, "Alex", "alex@email.com", BigDecimal.TEN, true);
+        Editor editor = EditorTestData.umEditorExistente();
 
         @BeforeEach
         void init() {
@@ -133,8 +133,7 @@ public class CadastroEditorComMockTest {
 
         @Test
         void dado_um_editor_valido_Quando_editar_Entao_deve_alterar_editor_salvo() {
-            Editor editorAtualizado = new Editor(1L, "Alex Silva", "alex.silva@email.com",
-                    BigDecimal.ZERO, false);
+            Editor editorAtualizado = EditorTestData.umEditorExistente();
             cadastroEditor.editar(editorAtualizado);
             Mockito.verify(editor, Mockito.times(1)).atualizarComDados(editorAtualizado);
 
@@ -143,11 +142,23 @@ public class CadastroEditorComMockTest {
             inOrder.verify(armazenamentoEditor).salvar(editor);
         }
 
+    }
+
+    @Nested
+    class EdicaoComEditorInexistente {
+
+        Editor editor = EditorTestData.umEditorExistente();
+
+        @BeforeEach
+        void init() {
+            Mockito.when(armazenamentoEditor.encontrarPorId(99L)).thenReturn(Optional.empty());
+        }
+
         @Test
         void Dado_um_editor_que_nao_exista_Quando_editar_Entao_deve_lancar_exception() {
             assertThrows(EditorNaoEncontradoException.class, () -> cadastroEditor.editar(editor));
-            Mockito.verify(armazenamentoEditor, Mockito.never()).salvar(Mockito.any());
+            Mockito.verify(armazenamentoEditor, Mockito.never()).salvar(Mockito.any(Editor.class));
         }
-    }
 
+    }
 }
